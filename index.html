@@ -53,6 +53,23 @@ footer{background:#090908;color:#fff;padding:25px 0}.footerGrid{display:flex;jus
 .socialBar a{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:21px;box-shadow:0 4px 14px #0005;border:2px solid #fff5}
 .socialBar .waS{background:#19b84a}.socialBar .igS{background:#c13584}.socialBar .fbS{background:#1877f2}
 @media(max-width:520px){.socialBar{right:12px;bottom:88px}.socialBar a{width:44px;height:44px;font-size:19px}}
+
+/* Customer registration popup */
+.customerModal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:18px;z-index:1000}
+.customerCard{width:min(460px,96%);background:#fff8e9;border-radius:22px;padding:28px;box-shadow:0 15px 50px #0008;position:relative}
+.customerClose{position:absolute;right:14px;top:10px;width:36px;height:36px;border:0;border-radius:50%;background:#111;color:#fff;font-size:24px;cursor:pointer}
+.customerCard h2{font-family:Georgia,serif;text-align:center;margin:0 0 5px;color:#111;font-size:30px}
+.customerBrand{text-align:center;color:var(--gold);font-size:22px;font-weight:900;margin-bottom:3px}
+.customerSub{text-align:center;margin:0 0 18px;color:#333}
+.customerForm label{display:block;font-weight:800;margin:11px 0 6px}
+.customerForm input{width:100%;padding:13px 14px;border:1px solid #d9c9a8;border-radius:10px;font-size:16px;outline:none;background:#fff}
+.customerForm input:focus{border-color:var(--gold);box-shadow:0 0 0 2px #e8b84e33}
+.customerSubmit{width:100%;border:0;background:var(--gold);color:#111;padding:14px;border-radius:28px;font-size:16px;font-weight:900;margin-top:16px;cursor:pointer}
+.customerSkip{display:block;text-align:center;margin-top:12px;color:#555;font-size:13px;text-decoration:underline;cursor:pointer}
+.customerMsg{text-align:center;font-weight:800;margin-top:10px;min-height:20px}
+.customerNote{text-align:center;color:#777;font-size:11px;margin-top:14px}
+@media(max-width:520px){.customerCard{padding:22px}.customerCard h2{font-size:26px}}
+
 </style>
 </head>
 <body>
@@ -119,5 +136,128 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <a class="igS" target="_blank" rel="noopener" href="https://www.instagram.com/s.h.a.n.t.u.2.0.0.2" title="Instagram">◎</a>
 <a class="fbS" target="_blank" rel="noopener" href="https://www.facebook.com/share/19MpCgntWg/" title="Facebook">f</a>
 </div>
+
+
+<!-- Customer Registration Popup -->
+<div class="customerModal" id="customerModal" role="dialog" aria-modal="true" aria-labelledby="customerTitle">
+  <div class="customerCard">
+    <button class="customerClose" id="customerClose" type="button" aria-label="Close">×</button>
+    <div class="customerBrand">SHANTANU HARGODE</div>
+    <h2 id="customerTitle">Welcome 👋</h2>
+    <p class="customerSub">नई collection और offers की जानकारी के लिए अपनी details भरें.</p>
+    <form class="customerForm" id="customerForm">
+      <label for="customerName">Name *</label>
+      <input id="customerName" name="name" type="text" placeholder="आपका नाम" required>
+
+      <label for="customerMobile">Mobile Number *</label>
+      <input id="customerMobile" name="mobile" type="tel" inputmode="numeric" maxlength="10" placeholder="10 digit mobile number" required>
+
+      <label for="customerEmail">Email</label>
+      <input id="customerEmail" name="email" type="email" placeholder="example@gmail.com">
+
+      <button class="customerSubmit" id="customerSubmit" type="submit">Continue →</button>
+      <div class="customerMsg" id="customerMsg" aria-live="polite"></div>
+      <span class="customerSkip" id="customerSkip">Skip for now</span>
+      <div class="customerNote">आपकी details केवल customer enquiry और fashion updates के लिए इस्तेमाल की जाएंगी.</div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC1ILlPPhb571Ra88FEMyypB0U4S2XPklX4",
+    authDomain: "shantanu-hargode-store.firebaseapp.com",
+    projectId: "shantanu-hargode-store",
+    storageBucket: "shantanu-hargode-store.firebasestorage.app",
+    messagingSenderId: "1030792035903",
+    appId: "1:1030792035903:web:30031296108b4f4733028a"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const modal = document.getElementById("customerModal");
+  const form = document.getElementById("customerForm");
+  const closeBtn = document.getElementById("customerClose");
+  const skipBtn = document.getElementById("customerSkip");
+  const msg = document.getElementById("customerMsg");
+  const submitBtn = document.getElementById("customerSubmit");
+
+  function closeCustomerPopup(){
+    modal.style.display = "none";
+    document.body.style.overflow = "";
+  }
+
+  function openCustomerPopup(){
+    modal.style.display = "flex";
+    document.body.style.overflow = "hidden";
+    setTimeout(() => document.getElementById("customerName")?.focus(), 100);
+  }
+
+  closeBtn.addEventListener("click", closeCustomerPopup);
+  skipBtn.addEventListener("click", () => {
+    localStorage.setItem("shantanu_customer_skipped", "1");
+    closeCustomerPopup();
+  });
+
+  modal.addEventListener("click", (e) => {
+    if(e.target === modal) closeCustomerPopup();
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById("customerName").value.trim();
+    const mobile = document.getElementById("customerMobile").value.trim();
+    const email = document.getElementById("customerEmail").value.trim();
+
+    if(!name){
+      msg.textContent = "Please enter your name.";
+      return;
+    }
+
+    if(!/^[6-9][0-9]{9}$/.test(mobile)){
+      msg.textContent = "Please enter a valid 10 digit mobile number.";
+      return;
+    }
+
+    if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+      msg.textContent = "Please enter a valid email.";
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Saving...";
+    msg.textContent = "";
+
+    try{
+      await addDoc(collection(db, "customers"), {
+        name,
+        mobile,
+        email: email || "",
+        source: "website",
+        createdAt: serverTimestamp()
+      });
+
+      localStorage.setItem("shantanu_customer_done", "1");
+      localStorage.removeItem("shantanu_customer_skipped");
+      msg.textContent = "Details saved successfully ✓";
+      setTimeout(closeCustomerPopup, 900);
+    }catch(error){
+      console.error(error);
+      msg.textContent = "Details save nahi ho payi. Please try again.";
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Continue →";
+    }
+  });
+
+  // Show automatically on first visit unless the visitor already registered or skipped.
+  if(!localStorage.getItem("shantanu_customer_done") && !localStorage.getItem("shantanu_customer_skipped")){
+    setTimeout(openCustomerPopup, 900);
+  }
+</script>
 
 </body></html>
