@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SHANTANU HARGODE | Customer Registration</title>
+<style>
+:root{--gold:#e8b84e;--cream:#fff8e9;--green:#19b84a}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:linear-gradient(135deg,#090908,#1b1811);font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:20px;color:#111}
+.card{width:min(430px,100%);background:var(--cream);border-radius:22px;padding:28px;box-shadow:0 20px 60px #0008}
+.brand{text-align:center;color:var(--gold);font-size:24px;font-weight:900}.tag{text-align:center;color:#555;font-size:13px;font-weight:700;margin:5px 0 22px}
+h1{text-align:center;font-family:Georgia,serif;margin:0 0 8px;font-size:28px}.sub{text-align:center;color:#666;font-size:14px;margin:0 0 20px}
+label{display:block;font-weight:800;font-size:13px;margin:13px 0 6px}input{width:100%;padding:13px 14px;border:1px solid #d4c9b5;border-radius:11px;font-size:15px;outline:none;background:#fff}
+input:focus{border-color:var(--gold);box-shadow:0 0 0 3px #e8b84e22}
+button{width:100%;border:0;border-radius:25px;padding:14px;background:var(--gold);font-weight:900;font-size:15px;cursor:pointer;margin-top:18px}button:disabled{opacity:.6}
+.note{text-align:center;color:#777;font-size:11px;margin-top:12px;line-height:1.4}#status{text-align:center;margin-top:14px;font-weight:800;min-height:20px}.success{color:#14863a}.error{color:#c62828}
+</style>
+</head>
+<body>
+<div class="card">
+<div class="brand">SHANTANU HARGODE</div>
+<div class="tag">आपके गाँव की अपनी Fashion Shop</div>
+<h1>Welcome 👋</h1>
+<p class="sub">नई collection और offers की जानकारी के लिए अपनी details भरें.</p>
+<form id="customerForm">
+<label>Name *</label><input id="name" type="text" placeholder="आपका नाम" maxlength="80" required>
+<label>Mobile Number *</label><input id="mobile" type="tel" inputmode="numeric" placeholder="10 digit mobile number" maxlength="10" required>
+<label>Email</label><input id="email" type="email" placeholder="example@gmail.com" maxlength="120">
+<button id="submitBtn" type="submit">Continue →</button>
+</form>
+<div id="status"></div>
+<div class="note">आपकी details केवल customer enquiry और fashion updates के लिए इस्तेमाल की जाएँगी.</div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+const firebaseConfig={
+apiKey:"AIzaSyC1ILlPPhb571Ra88FEMyypB0U4S2XPklX4",
+authDomain:"shantanu-hargode-store.firebaseapp.com",
+projectId:"shantanu-hargode-store",
+storageBucket:"shantanu-hargode-store.firebasestorage.app",
+messagingSenderId:"1030792035903",
+appId:"1:1030792035903:web:30031296108b4f4733028a"
+};
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+const form=document.getElementById("customerForm"),status=document.getElementById("status"),btn=document.getElementById("submitBtn");
+form.addEventListener("submit",async e=>{
+e.preventDefault();
+const name=document.getElementById("name").value.trim();
+const mobile=document.getElementById("mobile").value.trim();
+const email=document.getElementById("email").value.trim();
+if(!/^[6-9][0-9]{9}$/.test(mobile)){status.className="error";status.textContent="Please enter a valid 10-digit mobile number.";return}
+btn.disabled=true;btn.textContent="Saving...";
+try{
+await addDoc(collection(db,"customers"),{name,mobile,email:email||"",source:"website",createdAt:serverTimestamp()});
+status.className="success";status.textContent="Thank you! Details saved successfully. ✓";form.reset();
+setTimeout(()=>{window.location.href="index.html"},1200);
+}catch(err){console.error(err);status.className="error";status.textContent="Details save nahi ho paayi. Please try again.";btn.disabled=false;btn.textContent="Continue →"}
+});
+</script>
+</body>
+</html>
