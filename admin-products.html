@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shantanu Hargode | Admin Products</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#0b0b0b;color:#fff}.wrap{max-width:900px;margin:auto;padding:25px}.card{background:#151515;border:1px solid #333;border-radius:16px;padding:20px;margin-bottom:20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}label{display:block;margin:8px 0;font-weight:bold}input,select,textarea{width:100%;padding:12px;box-sizing:border-box;background:#0d0d0d;color:#fff;border:1px solid #444;border-radius:8px}textarea{min-height:90px}button{padding:12px 20px;border:0;border-radius:9px;font-weight:bold;cursor:pointer}.gold{background:#e9b949}.dark{background:#222;color:#fff}.hidden{display:none}.status{margin-top:12px;padding:10px;border-radius:8px}.ok{background:#123d25}.err{background:#4a1717}.preview{width:140px;height:140px;object-fit:cover;margin-top:10px;border-radius:10px;display:none}.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}.product{background:#101010;border:1px solid #333;border-radius:12px;overflow:hidden}.product img{width:100%;height:170px;object-fit:cover;background:#222}.p{padding:12px}.price{color:#e9b949;font-weight:bold}@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<h1 style="color:#e9b949">SHANTANU HARGODE</h1><p>Admin Product Manager</p>
+<section id="login" class="card"><h2>Admin Login</h2>
+<div class="grid"><div><label>Email</label><input id="email" type="email"></div><div><label>Password</label><input id="pass" type="password"></div></div><br>
+<button id="loginBtn" class="gold">Login</button><div id="loginStatus"></div></section>
+
+<section id="panel" class="hidden">
+<button id="logout" class="dark">Logout</button>
+<div class="card"><h2>Add Product</h2>
+<form id="form">
+<div class="grid">
+<div><label>Product Photo URL *</label><input id="imageUrl" type="url" placeholder="https://example.com/product.jpg" required></div>
+<div><label>Product Name *</label><input id="name" required placeholder="Classic Cotton T-Shirt"></div>
+<div><label>Category *</label><select id="category" required><option value="">Select</option><option value="men">Men</option><option value="women">Women</option><option value="kids">Kids</option></select></div>
+<div><label>Price ₹ *</label><input id="price" type="number" min="0" required></div>
+<div><label>Offer Price ₹</label><input id="offer" type="number" min="0"></div>
+<div><label>Stock *</label><input id="stock" type="number" min="0" required></div>
+<div><label>Active</label><select id="active"><option value="true">Yes</option><option value="false">No</option></select></div>
+</div>
+<label>Description</label><textarea id="desc" placeholder="Premium cotton T-shirt"></textarea><br>
+<button class="gold" id="addBtn">Add Product</button><div id="status"></div>
+</form></div>
+<div class="card"><h2>Products</h2><div id="products" class="products"></div></div>
+</section></div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import{getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import{getFirestore,collection,addDoc,getDocs,query,orderBy}from"https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyC1ILpLhX4FEMyypB0U4S2XPklX4",
+authDomain:"shantanu-hargode-store.firebaseapp.com",
+projectId:"shantanu-hargode-store",
+storageBucket:"shantanu-hargode-store.firebasestorage.app",
+messagingSenderId:"1030792035903",
+appId:"1:1030792035903:web:30031296108b4f4733028a"
+};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const $=id=>document.getElementById(id);
+const msg=(el,t,c)=>{el.textContent=t;el.className="status "+c};
+
+onAuthStateChanged(auth,u=>{
+ if(u){$("login").classList.add("hidden");$("panel").classList.remove("hidden");load()}
+ else{$("login").classList.remove("hidden");$("panel").classList.add("hidden")}
+});
+$("loginBtn").onclick=async()=>{
+ try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("pass").value)}
+ catch(e){msg($("loginStatus"),e.message,"err")}
+};
+$("logout").onclick=()=>signOut(auth);
+
+$("imageUrl").oninput=()=>{
+ const url=$("imageUrl").value.trim();
+ if(url){$("preview").src=url;$("preview").style.display="block"}
+};
+
+$("form").onsubmit=async e=>{
+ e.preventDefault();
+ const b=$("addBtn");b.disabled=true;b.textContent="Saving...";
+ try{
+  const imageUrl=$("imageUrl").value.trim();
+  new URL(imageUrl);
+  await addDoc(collection(db,"products"),{
+   name:$("name").value.trim(),
+   category:$("category").value,
+   price:Number($("price").value),
+   offerPrice:$("offer").value===""?null:Number($("offer").value),
+   stock:Number($("stock").value),
+   description:$("desc").value.trim(),
+   imageUrl,
+   active:$("active").value==="true",
+   createdAt:new Date()
+  });
+  msg($("status"),"Product successfully add ho gaya!","ok");
+  $("form").reset();$("preview").style.display="none";load();
+ }catch(e){msg($("status"),"Image URL check karo: "+e.message,"err")}
+ finally{b.disabled=false;b.textContent="Add Product"}
+};
+
+async function load(){
+ const box=$("products");box.innerHTML="Loading...";
+ try{
+  const s=await getDocs(query(collection(db,"products"),orderBy("name")));
+  box.innerHTML="";
+  if(s.empty){box.textContent="No products yet.";return}
+  s.forEach(x=>{
+   const p=x.data(),d=document.createElement("div");d.className="product";
+   d.innerHTML="<img src='"+(p.imageUrl||"")+"' alt=''><div class='p'><b>"+(p.name||"")+"</b><div>"+(p.category||"")+" · Stock "+(p.stock??0)+"</div><div class='price'>₹"+(p.offerPrice??p.price??0)+"</div></div>";
+   box.appendChild(d);
+  });
+ }catch(e){box.textContent=e.message}
+}
+</script></body></html>
